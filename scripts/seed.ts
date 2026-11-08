@@ -1,12 +1,7 @@
 // npm run setup — membuat tabel dan data awal (aman dijalankan berulang kali)
 import "dotenv/config";
-import { createClient } from "@libsql/client";
+import { client } from "../src/db";
 import { ensureDatabase } from "../src/db/init";
-
-const client = createClient({
-  url: process.env.DATABASE_URL ?? "file:./data/pos.db",
-  authToken: process.env.DATABASE_AUTH_TOKEN || undefined,
-});
 
 ensureDatabase(client, console.log)
   .then(() => {
