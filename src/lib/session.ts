@@ -11,7 +11,7 @@ export type SessionPayload = {
 };
 
 function secret() {
-  const s = process.env.AUTH_SECRET;
+  const s = (process.env.AUTH_SECRET ?? "").trim().replace(/^["']|["']$/g, "");
   if (!s || s.length < 16) {
     if (process.env.NODE_ENV === "production") {
       throw new Error("AUTH_SECRET belum diatur (minimal 16 karakter).");
