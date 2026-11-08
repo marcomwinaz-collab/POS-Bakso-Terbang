@@ -69,3 +69,108 @@ body {
     background: white;
   }
 }
+
+/* ===== Sidebar futuristik (merah + cream) ===== */
+@keyframes sidebar-shift {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 0% 100%; }
+}
+@keyframes sidebar-scan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+.sidebar-fx {
+  --sb-cream: #fdf3d7;
+  --sb-cream-2: #f5deaa;
+  --sb-ink: #7f1d1d;
+  background: linear-gradient(165deg, #3b0507 0%, #7f1d1d 35%, #b91c1c 70%, #450a0a 100%);
+  background-size: 100% 220%;
+  animation: sidebar-shift 10s ease-in-out infinite alternate;
+  color: #fde8e8;
+  border-right: 1px solid rgb(253 243 215 / 0.25);
+  box-shadow: 4px 0 30px rgb(220 38 38 / 0.45);
+  overflow: hidden;
+}
+.sidebar-fx::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgb(253 243 215 / 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(253 243 215 / 0.05) 1px, transparent 1px);
+  background-size: 22px 22px;
+  mask-image: linear-gradient(to bottom, #000, transparent 85%);
+}
+.sidebar-fx::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 80px;
+  pointer-events: none;
+  background: linear-gradient(to bottom, transparent, rgb(253 243 215 / 0.08), transparent);
+  animation: sidebar-scan 6s linear infinite;
+}
+.sidebar-fx > * {
+  position: relative;
+  z-index: 1;
+}
+.sidebar-fx .sidebar-muted {
+  color: #fecaca;
+  letter-spacing: 0.12em;
+}
+.sidebar-fx .sidebar-glass {
+  background: rgb(255 255 255 / 0.08);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgb(253 243 215 / 0.25);
+}
+.sidebar-fx .sidebar-footer {
+  border-color: rgb(253 243 215 / 0.2);
+}
+.sidebar-fx .sidebar-link {
+  position: relative;
+  border: 1px solid transparent;
+  transition: all 0.25s ease;
+}
+.sidebar-fx .sidebar-link svg {
+  filter: drop-shadow(0 0 3px rgb(253 243 215 / 0.5));
+}
+.sidebar-fx .sidebar-link:hover {
+  background: linear-gradient(90deg, var(--sb-cream), #f8e7bd);
+  color: var(--sb-ink);
+  border-color: var(--sb-cream);
+  transform: translateX(4px);
+  box-shadow: 0 0 14px rgb(253 243 215 / 0.55);
+}
+.sidebar-fx .sidebar-link.is-active {
+  background: linear-gradient(90deg, var(--sb-cream), var(--sb-cream-2));
+  color: var(--sb-ink);
+  font-weight: 600;
+  box-shadow: 0 0 18px rgb(253 243 215 / 0.7);
+}
+.sidebar-fx .sidebar-link.is-active::before {
+  content: "";
+  position: absolute;
+  left: -12px;
+  top: 20%;
+  bottom: 20%;
+  width: 4px;
+  border-radius: 4px;
+  background: var(--sb-cream);
+  box-shadow: 0 0 10px var(--sb-cream), 0 0 20px #fbbf24;
+}
+.sidebar-fx ::-webkit-scrollbar {
+  width: 4px;
+}
+.sidebar-fx ::-webkit-scrollbar-thumb {
+  background: var(--sb-cream);
+  border-radius: 4px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-fx,
+  .sidebar-fx::after {
+    animation: none;
+  }
+}
