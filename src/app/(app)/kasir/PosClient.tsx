@@ -203,7 +203,7 @@ export function PosClient({
       </section>
 
       {/* Keranjang */}
-      <aside className="flex w-full flex-col border-t border-stone-200 bg-white lg:h-screen lg:w-[400px] lg:border-t-0 lg:border-l">
+      <aside id="keranjang" className="flex w-full scroll-mt-2 flex-col border-t border-stone-200 bg-white lg:h-screen lg:w-[400px] lg:border-t-0 lg:border-l">
         <div className="space-y-3 border-b border-stone-200 p-4">
           <div className="grid grid-cols-3 gap-1 rounded-lg bg-stone-100 p-1">
             {TYPES.map((t) => (
@@ -296,7 +296,7 @@ export function PosClient({
           </ul>
         </div>
 
-        <div className="space-y-2 border-t border-stone-200 p-4 text-sm">
+        <div className="space-y-2 border-t border-stone-200 p-4 pb-24 text-sm lg:pb-4">
           <div className="flex items-center gap-2">
             <span className="text-stone-600">Diskon</span>
             <select className="input ml-auto w-20 py-1" value={discType} onChange={(e) => setDiscType(e.target.value as "NOMINAL" | "PERCENT")}>
@@ -335,6 +335,18 @@ export function PosClient({
           )}
         </div>
       </aside>
+
+      {cart.length > 0 && (
+        <button
+          className="fixed inset-x-3 bottom-3 z-30 flex items-center justify-between rounded-xl bg-brand-600 px-4 py-3 text-white shadow-lg lg:hidden"
+          onClick={() => document.getElementById("keranjang")?.scrollIntoView({ behavior: "smooth" })}
+        >
+          <span className="flex items-center gap-2 text-sm font-medium">
+            <ShoppingBag size={18} /> {cart.reduce((a, l) => a + l.qty, 0)} item · Lihat pesanan
+          </span>
+          <span className="font-bold">{rupiah(totals.total)}</span>
+        </button>
+      )}
 
       {showPay && (
         <PaymentModal
