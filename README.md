@@ -5,29 +5,32 @@ Aplikasi kasir (Point of Sale) dan dashboard berbasis web untuk **Bakso Terbang*
 ## Fitur
 
 **Kasir**
-- Pilih menu per kategori, pencarian cepat, catatan per item (mis. "tidak pedas")
-- Makan di tempat (dengan pilihan meja) atau bawa pulang
-- **Open bill**: simpan pesanan per meja, ubah/tambah item, bayar belakangan
-- Diskon nominal atau persen, pajak/PB1 dan service charge otomatis
-- Pembayaran Tunai (hitung kembalian + tombol nominal cepat), QRIS, Debit, Transfer
-- Cetak struk 80 mm, juga tagihan sementara untuk open bill
+- Pilih menu per kategori, cari menu, beri catatan per item (mis. "tidak pedas")
+- Jenis order: **Makan di tempat** (no. meja + jumlah tamu), **Bawa pulang**, **Online/Ojol**
+- **Open bill** per meja: simpan dulu, ubah/tambah item, bayar belakangan
+- Diskon nominal/persen, pajak (PB1) dan service charge otomatis per outlet
+- Pembayaran Tunai (kembalian + tombol nominal cepat), QRIS, Debit, Transfer
+- Refund transaksi lunas (khusus admin, wajib alasan)
 
-**Produk & Stok**
-- Kelola produk, kategori, HPP/modal, dan margin
-- Stok berkurang otomatis saat transaksi lunas; kembali saat transaksi dibatalkan
-- Stok masuk, stok keluar (rusak/basi), dan stok opname, dengan riwayat lengkap
-- Peringatan stok menipis
-- Produk tanpa lacak stok (mis. es teh, nasi)
+**Pengaturan**
+- **Produk & harga**, kategori
+- **No. meja** per outlet (tambah satu-satu atau sekaligus, mis. meja 1–20)
+- **Outlet/cabang**: kode struk, alamat, pajak, service charge
+- **Printer & struk** per outlet: kertas 58/80 mm, ukuran huruf, logo, header/footer, cetak otomatis, jumlah salinan, tiket dapur, cetak uji
+- Pengguna: Admin (semua outlet) dan Kasir (ditempatkan di satu outlet)
 
-**Dashboard & Laporan** (khusus admin)
-- Omzet, jumlah transaksi, rata-rata per transaksi, laba kotor, dibandingkan dengan periode sebelumnya
-- Grafik omzet harian, jam ramai, metode pembayaran, penjualan per kategori
-- Menu terlaris
-- Riwayat transaksi dengan filter tanggal/status dan **export CSV** (bisa dibuka di Excel)
+**Laporan Sales** (khusus admin, filter tanggal & outlet, export CSV)
+- Ringkasan sales: penjualan kotor, diskon, bersih, service, pajak, total, metode pembayaran
+- Detail sales: setiap transaksi beserta itemnya
+- Sales produk: qty & nilai per produk dan per kategori
+- Sales outlet: perbandingan antar cabang
+- Jenis order: makan di tempat vs bawa pulang vs online
+- Refund: daftar refund, alasan, dan siapa yang melakukan
 
-**Pengguna & Hak akses**
-- Peran **Admin** (akses penuh) dan **Kasir** (kasir, open bill, transaksi)
-- Pembatalan transaksi lunas hanya oleh admin, wajib dengan alasan
+**Analisis**
+- Produk terlaris (qty & pendapatan) dan produk kurang laku
+- Jam teramai, hari teramai, peta keramaian hari × jam
+- Tren pendapatan harian, rata-rata item & belanja per transaksi, jenis order, metode pembayaran
 
 ## Menjalankan di komputer
 
@@ -46,12 +49,13 @@ Buka http://localhost:3000.
 
 | Akun | Username | Password |
 |------|----------|----------|
-| Admin | `admin` | `admin123` |
-| Kasir | `kasir` | `kasir123` |
+| Admin (semua outlet) | `admin` | `admin123` |
+| Kasir Outlet Pusat | `kasir` | `kasir123` |
+| Kasir Outlet Cabang 2 | `kasir2` | `kasir123` |
 
-> **Segera ganti kedua password ini** di menu Pengguna setelah login pertama.
+> **Segera ganti password-password ini** di menu Pengguna setelah login pertama.
 
-Opsional, untuk mencoba dashboard dengan data contoh 30 hari: `npm run db:demo` (jangan dijalankan di database yang dipakai berjualan).
+Opsional, untuk mencoba laporan & analisis dengan data contoh 30 hari: `npm run db:demo` (jangan dijalankan di database yang dipakai berjualan).
 
 ## Menjalankan untuk operasional (produksi)
 
@@ -87,7 +91,11 @@ Data tersimpan di file `data/pos.db`. **Backup file ini secara rutin.**
 | `TZ_OFFSET_HOURS` | Zona waktu laporan: 7 = WIB, 8 = WITA, 9 = WIT |
 | `INSECURE_COOKIE` | Isi `1` jika produksi diakses tanpa HTTPS |
 
-Nama toko, alamat, pajak, service charge, dan catatan kaki struk diatur dari menu **Pengaturan** di aplikasi.
+Nama usaha diatur di **Pengaturan → Umum**; alamat, pajak, dan service charge di **Outlet**; tampilan struk dan cetak otomatis di **Printer & Struk**.
+
+### Printer thermal
+
+Aplikasi mencetak lewat browser, jadi semua printer thermal yang terpasang di perangkat kasir (USB, Bluetooth, atau LAN) bisa dipakai. Jadikan printer thermal sebagai printer default, pilih margin *None* di dialog cetak, lalu jalankan Chrome dengan opsi `--kiosk-printing` agar struk langsung tercetak tanpa dialog.
 
 ## Struktur kode
 
@@ -96,9 +104,11 @@ src/
   app/
     (app)/kasir       Layar kasir
     (app)/pesanan     Open bill
-    (app)/transaksi   Riwayat transaksi + export CSV
-    (app)/dashboard   Dashboard laporan
-    (app)/produk, kategori, stok, meja, pengguna, pengaturan
+    (app)/transaksi   Riwayat transaksi outlet (cetak ulang, refund)
+    (app)/dashboard   Ringkasan hari ini
+    (app)/laporan     Laporan sales (6 jenis) + export CSV
+    (app)/analisis    Analisis penjualan
+    (app)/produk, kategori, meja, outlet, printer, pengguna, pengaturan
     struk/[id]        Halaman cetak struk
     actions/          Server actions (pesanan, admin, login)
   db/schema.ts        Skema database

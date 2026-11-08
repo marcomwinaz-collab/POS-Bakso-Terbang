@@ -6,12 +6,44 @@ const createdAt = () =>
     .notNull()
     .default(sql`(unixepoch() * 1000)`);
 
+export const ORDER_TYPES = ["DINE_IN", "TAKEAWAY", "ONLINE"] as const;
+export const PAYMENT_METHODS = ["CASH", "QRIS", "DEBIT", "TRANSFER"] as const;
+
+/** Pengaturan umum usaha (satu baris) */
+export const settings = sqliteTable("settings", {
+  id: integer("id").primaryKey(),
+  businessName: text("business_name").notNull().default("Bakso Terbang"),
+});
+
+/** Outlet / cabang, termasuk pajak & pengaturan printer per outlet */
+export const outlets = sqliteTable("outlets", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  code: text("code").notNull().unique(),
+  name: text("name").notNull(),
+  address: text("address").notNull().default(""),
+  phone: text("phone").notNull().default(""),
+  taxPercent: integer("tax_percent").notNull().default(0),
+  servicePercent: integer("service_percent").notNull().default(0),
+  active: integer("active", { mode: "boolean" }).notNull().default(true),
+  // printer
+  paperWidth: integer("paper_width").notNull().default(80), // 58 atau 80 mm
+  fontSize: integer("font_size").notNull().default(12),
+  receiptHeader: text("receipt_header").notNull().default(""),
+  receiptFooter: text("receipt_footer").notNull().default("Terima kasih atas kunjungan Anda!"),
+  showLogo: integer("show_logo", { mode: "boolean" }).notNull().default(true),
+  autoPrintReceipt: integer("auto_print_receipt", { mode: "boolean" }).notNull().default(true),
+  receiptCopies: integer("receipt_copies").notNull().default(1),
+  printKitchenTicket: integer("print_kitchen_ticket", { mode: "boolean" }).notNull().default(false),
+  createdAt: createdAt(),
+});
+
 export const users = sqliteTable("users", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
   username: text("username").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
   role: text("role", { enum: ["ADMIN", "KASIR"] }).notNull().default("KASIR"),
+  outletId: integer("outlet_id").references(() => outlets.id, { onDelete: "set null" }),
   active: integer("active", { mode: "boolean" }).notNull().default(true),
   createdAt: createdAt(),
 });
@@ -26,56 +58,61 @@ export const products = sqliteTable("products", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
   categoryId: integer("category_id").references(() => categories.id, { onDelete: "set null" }),
-  sku: text("sku"),
   price: integer("price").notNull().default(0),
-  cost: integer("cost").notNull().default(0),
-  stock: integer("stock").notNull().default(0),
-  trackStock: integer("track_stock", { mode: "boolean" }).notNull().default(true),
-  minStock: integer("min_stock").notNull().default(5),
   active: integer("active", { mode: "boolean" }).notNull().default(true),
   createdAt: createdAt(),
 });
 
-export const diningTables = sqliteTable("dining_tables", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  name: text("name").notNull(),
-  active: integer("active", { mode: "boolean" }).notNull().default(true),
-});
-
-export const settings = sqliteTable("settings", {
-  id: integer("id").primaryKey(),
-  storeName: text("store_name").notNull().default("Bakso Terbang"),
-  address: text("address").notNull().default(""),
-  phone: text("phone").notNull().default(""),
-  taxPercent: integer("tax_percent").notNull().default(0),
-  servicePercent: integer("service_percent").notNull().default(0),
-  receiptFooter: text("receipt_footer").notNull().default("Terima kasih atas kunjungan Anda!"),
-});
+export const diningTables = sqliteTable(
+  "dining_tables",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    outletId: integer("outlet_id")
+      .notNull()
+      .references(() => outlets.id, { onDelete: "cascade" }),
+    number: text("number").notNull(),
+    capacity: integer("capacity").notNull().default(4),
+    active: integer("active", { mode: "boolean" }).notNull().default(true),
+  },
+  (t) => [index("dining_tables_outlet_idx").on(t.outletId)],
+);
 
 export const orders = sqliteTable(
   "orders",
   {
     id: integer("id").primaryKey({ autoIncrement: true }),
     code: text("code").notNull().unique(),
-    type: text("type", { enum: ["DINE_IN", "TAKEAWAY"] }).notNull().default("DINE_IN"),
+    outletId: integer("outlet_id")
+      .notNull()
+      .references(() => outlets.id),
+    type: text("type", { enum: ORDER_TYPES }).notNull().default("DINE_IN"),
     tableId: integer("table_id").references(() => diningTables.id, { onDelete: "set null" }),
+    tableNumber: text("table_number"),
     customerName: text("customer_name"),
-    status: text("status", { enum: ["OPEN", "PAID", "VOID"] }).notNull().default("OPEN"),
+    guests: integer("guests"),
+    /** OPEN = open bill, PAID = lunas, VOID = open bill dibatalkan, REFUNDED = transaksi lunas yang direfund */
+    status: text("status", { enum: ["OPEN", "PAID", "VOID", "REFUNDED"] }).notNull().default("OPEN"),
     subtotal: integer("subtotal").notNull().default(0),
     discount: integer("discount").notNull().default(0),
-    tax: integer("tax").notNull().default(0),
     service: integer("service").notNull().default(0),
+    tax: integer("tax").notNull().default(0),
     total: integer("total").notNull().default(0),
-    paymentMethod: text("payment_method", { enum: ["CASH", "QRIS", "DEBIT", "TRANSFER"] }),
+    paymentMethod: text("payment_method", { enum: PAYMENT_METHODS }),
     paidAmount: integer("paid_amount").notNull().default(0),
     change: integer("change_amount").notNull().default(0),
     note: text("note"),
-    voidReason: text("void_reason"),
     cashierId: integer("cashier_id").references(() => users.id, { onDelete: "set null" }),
     createdAt: createdAt(),
     paidAt: integer("paid_at", { mode: "timestamp_ms" }),
+    cancelReason: text("cancel_reason"),
+    refundedAt: integer("refunded_at", { mode: "timestamp_ms" }),
+    refundedById: integer("refunded_by_id").references(() => users.id, { onDelete: "set null" }),
   },
-  (t) => [index("orders_status_idx").on(t.status), index("orders_paid_at_idx").on(t.paidAt)],
+  (t) => [
+    index("orders_status_idx").on(t.status),
+    index("orders_paid_at_idx").on(t.paidAt),
+    index("orders_outlet_idx").on(t.outletId),
+  ],
 );
 
 export const orderItems = sqliteTable(
@@ -87,8 +124,8 @@ export const orderItems = sqliteTable(
       .references(() => orders.id, { onDelete: "cascade" }),
     productId: integer("product_id").references(() => products.id, { onDelete: "set null" }),
     name: text("name").notNull(),
+    categoryName: text("category_name"),
     price: integer("price").notNull(),
-    cost: integer("cost").notNull().default(0),
     qty: integer("qty").notNull(),
     note: text("note"),
     subtotal: integer("subtotal").notNull(),
@@ -96,27 +133,12 @@ export const orderItems = sqliteTable(
   (t) => [index("order_items_order_idx").on(t.orderId)],
 );
 
-export const stockMovements = sqliteTable(
-  "stock_movements",
-  {
-    id: integer("id").primaryKey({ autoIncrement: true }),
-    productId: integer("product_id")
-      .notNull()
-      .references(() => products.id, { onDelete: "cascade" }),
-    type: text("type", { enum: ["IN", "OUT", "ADJUST", "SALE", "VOID"] }).notNull(),
-    qty: integer("qty").notNull(),
-    stockAfter: integer("stock_after").notNull(),
-    note: text("note"),
-    userId: integer("user_id").references(() => users.id, { onDelete: "set null" }),
-    createdAt: createdAt(),
-  },
-  (t) => [index("stock_movements_product_idx").on(t.productId)],
-);
-
 export type User = typeof users.$inferSelect;
+export type Outlet = typeof outlets.$inferSelect;
 export type Product = typeof products.$inferSelect;
 export type Category = typeof categories.$inferSelect;
 export type DiningTable = typeof diningTables.$inferSelect;
 export type Order = typeof orders.$inferSelect;
 export type OrderItem = typeof orderItems.$inferSelect;
-export type Settings = typeof settings.$inferSelect;
+export type OrderType = (typeof ORDER_TYPES)[number];
+export type PaymentMethod = (typeof PAYMENT_METHODS)[number];

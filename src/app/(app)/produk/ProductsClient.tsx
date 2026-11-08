@@ -14,14 +14,12 @@ export function ProductsClient({ products, categories }: { products: Product[]; 
   const [cat, setCat] = useState("");
   const [, start] = useTransition();
   const catName = new Map(categories.map((c) => [c.id, c.name]));
-  const list = products.filter(
-    (p) => p.name.toLowerCase().includes(q.toLowerCase()) && (!cat || String(p.categoryId) === cat),
-  );
+  const list = products.filter((p) => p.name.toLowerCase().includes(q.toLowerCase()) && (!cat || String(p.categoryId) === cat));
   const p = edit === "new" ? null : edit;
 
   return (
     <main>
-      <PageHeader title="Produk" subtitle={`${products.length} menu terdaftar`}>
+      <PageHeader title="Produk & Harga" subtitle={`${products.filter((x) => x.active).length} menu aktif`}>
         <button className="btn-primary" onClick={() => setEdit("new")}>
           <Plus size={16} /> Tambah Produk
         </button>
@@ -39,16 +37,13 @@ export function ProductsClient({ products, categories }: { products: Product[]; 
             ))}
           </select>
         </div>
-        <div className="card overflow-x-auto">
+        <div className="card max-w-4xl overflow-x-auto">
           <table className="table">
             <thead>
               <tr>
                 <th>Nama</th>
                 <th>Kategori</th>
                 <th className="text-right">Harga</th>
-                <th className="text-right">HPP</th>
-                <th className="text-right">Margin</th>
-                <th className="text-right">Stok</th>
                 <th>Status</th>
                 <th></th>
               </tr>
@@ -56,20 +51,12 @@ export function ProductsClient({ products, categories }: { products: Product[]; 
             <tbody>
               {list.map((x) => (
                 <tr key={x.id} className={x.active ? "" : "opacity-50"}>
-                  <td className="font-medium">
-                    {x.name}
-                    {x.sku && <div className="text-xs text-stone-400">{x.sku}</div>}
-                  </td>
+                  <td className="font-medium">{x.name}</td>
                   <td>{x.categoryId ? catName.get(x.categoryId) : "-"}</td>
-                  <td className="text-right">{rupiah(x.price)}</td>
-                  <td className="text-right text-stone-500">{rupiah(x.cost)}</td>
-                  <td className="text-right text-stone-500">{x.price ? Math.round(((x.price - x.cost) / x.price) * 100) : 0}%</td>
-                  <td className={`text-right font-medium ${x.trackStock && x.stock <= x.minStock ? "text-red-600" : ""}`}>
-                    {x.trackStock ? x.stock : "∞"}
-                  </td>
+                  <td className="text-right font-semibold">{rupiah(x.price)}</td>
                   <td>
                     <span className={`badge ${x.active ? "bg-green-100 text-green-800" : "bg-stone-200 text-stone-600"}`}>
-                      {x.active ? "Aktif" : "Nonaktif"}
+                      {x.active ? "Dijual" : "Tidak dijual"}
                     </span>
                   </td>
                   <td className="text-right whitespace-nowrap">
@@ -79,9 +66,7 @@ export function ProductsClient({ products, categories }: { products: Product[]; 
                     <button
                       className="btn-ghost p-1.5 text-red-600"
                       aria-label="Hapus"
-                      onClick={() => {
-                        if (confirm(`Hapus ${x.name}? (Produk yang pernah terjual akan dinonaktifkan)`)) start(() => deleteProduct(x.id));
-                      }}
+                      onClick={() => confirm(`Hapus ${x.name}? (Produk yang pernah terjual akan dinonaktifkan)`) && start(() => deleteProduct(x.id))}
                     >
                       <Trash2 size={16} />
                     </button>
@@ -90,7 +75,7 @@ export function ProductsClient({ products, categories }: { products: Product[]; 
               ))}
               {!list.length && (
                 <tr>
-                  <td colSpan={8} className="py-10 text-center text-stone-400">Belum ada produk.</td>
+                  <td colSpan={5} className="py-10 text-center text-stone-400">Belum ada produk.</td>
                 </tr>
               )}
             </tbody>
@@ -113,29 +98,11 @@ export function ProductsClient({ products, categories }: { products: Product[]; 
                 ))}
               </select>
             </Field>
-            <Field label="SKU / Kode (opsional)">
-              <input name="sku" className="input" defaultValue={p?.sku ?? ""} />
-            </Field>
             <Field label="Harga jual (Rp)">
-              <input name="price" type="number" min={0} className="input" defaultValue={p?.price ?? ""} required />
-            </Field>
-            <Field label="HPP / Modal (Rp)">
-              <input name="cost" type="number" min={0} className="input" defaultValue={p?.cost ?? 0} />
-            </Field>
-            {!p && (
-              <Field label="Stok awal">
-                <input name="stock" type="number" min={0} className="input" defaultValue={0} />
-              </Field>
-            )}
-            <Field label="Batas stok menipis">
-              <input name="minStock" type="number" min={0} className="input" defaultValue={p?.minStock ?? 5} />
+              <input name="price" type="number" min={0} step={500} className="input" defaultValue={p?.price ?? ""} required />
             </Field>
           </div>
-          {p && <p className="text-xs text-stone-500">Untuk mengubah jumlah stok, gunakan menu Stok.</p>}
-          <div className="flex gap-6">
-            <Checkbox name="trackStock" label="Lacak stok" defaultChecked={p?.trackStock ?? true} />
-            <Checkbox name="active" label="Aktif (tampil di kasir)" defaultChecked={p?.active ?? true} />
-          </div>
+          <Checkbox name="active" label="Dijual (tampil di kasir)" defaultChecked={p?.active ?? true} />
         </FormModal>
       )}
     </main>

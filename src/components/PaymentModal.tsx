@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Banknote, CreditCard, QrCode, Landmark, X } from "lucide-react";
 import { rupiah } from "@/lib/format";
-import type { PaymentMethod } from "@/app/actions/orders";
+import type { PaymentMethod } from "@/db/schema";
 
 const METHODS: { id: PaymentMethod; label: string; icon: typeof Banknote }[] = [
   { id: "CASH", label: "Tunai", icon: Banknote },

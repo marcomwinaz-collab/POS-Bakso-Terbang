@@ -3,29 +3,37 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Minus, Plus, Search, Trash2, ShoppingBag, CheckCircle2, Printer, MessageSquare } from "lucide-react";
-import type { Category, DiningTable, Order, OrderItem, Product } from "@/db/schema";
+import type { Category, DiningTable, Order, OrderItem, OrderType, Product } from "@/db/schema";
 import { rupiah } from "@/lib/format";
 import { computeTotals } from "@/lib/pricing";
-import { saveOrder, type PaymentMethod } from "@/app/actions/orders";
+import { saveOrder } from "@/app/actions/orders";
+import type { PaymentMethod } from "@/db/schema";
+import { previewOrder, printOrder } from "@/lib/print";
 import { PaymentModal } from "@/components/PaymentModal";
 
 type CartLine = { productId: number; name: string; price: number; qty: number; note: string };
 
+type OutletInfo = { name: string; taxPercent: number; servicePercent: number; autoPrint: boolean; kitchen: boolean };
+
+const TYPES: { id: OrderType; label: string }[] = [
+  { id: "DINE_IN", label: "Makan di tempat" },
+  { id: "TAKEAWAY", label: "Bawa pulang" },
+  { id: "ONLINE", label: "Online / Ojol" },
+];
+
 export function PosClient({
+  outlet,
   products,
   categories,
   tables,
   occupiedTableIds,
-  taxPercent,
-  servicePercent,
   editing,
 }: {
+  outlet: OutletInfo;
   products: Product[];
   categories: Category[];
   tables: DiningTable[];
   occupiedTableIds: number[];
-  taxPercent: number;
-  servicePercent: number;
   editing: { order: Order; items: OrderItem[] } | null;
 }) {
   const router = useRouter();
@@ -39,7 +47,9 @@ export function PosClient({
         .filter((i) => i.productId && productById.has(i.productId))
         .map((i) => ({ productId: i.productId!, name: i.name, price: productById.get(i.productId!)!.price, qty: i.qty, note: i.note ?? "" })) ?? [],
   );
-  const [type, setType] = useState<"DINE_IN" | "TAKEAWAY">(editing?.order.type ?? "DINE_IN");
+  const { taxPercent, servicePercent } = outlet;
+  const [type, setType] = useState<OrderType>(editing?.order.type ?? "DINE_IN");
+  const [guests, setGuests] = useState<number | "">(editing?.order.guests ?? "");
   const [tableId, setTableId] = useState<number | "">(editing?.order.tableId ?? "");
   const [customer, setCustomer] = useState(editing?.order.customerName ?? "");
   const [discType, setDiscType] = useState<"NOMINAL" | "PERCENT">("NOMINAL");
@@ -58,10 +68,6 @@ export function PosClient({
 
   function add(p: Product) {
     setError(null);
-    if (p.trackStock && cartQty(p.id) >= p.stock) {
-      setError(`Stok ${p.name} tinggal ${p.stock}.`);
-      return;
-    }
     setCart((c) => {
       const i = c.findIndex((l) => l.productId === p.id);
       if (i >= 0) return c.map((l, j) => (j === i ? { ...l, qty: l.qty + 1 } : l));
@@ -70,23 +76,14 @@ export function PosClient({
   }
 
   function changeQty(id: number, delta: number) {
-    const p = productById.get(id);
-    setCart((c) =>
-      c
-        .map((l) => {
-          if (l.productId !== id) return l;
-          let qty = l.qty + delta;
-          if (p?.trackStock && qty > p.stock) qty = p.stock;
-          return { ...l, qty };
-        })
-        .filter((l) => l.qty > 0),
-    );
+    setCart((c) => c.map((l) => (l.productId === id ? { ...l, qty: l.qty + delta } : l)).filter((l) => l.qty > 0));
   }
 
   function reset() {
     setCart([]);
     setCustomer("");
     setTableId("");
+    setGuests("");
     setDiscValue(0);
     setDone(null);
     setError(null);
@@ -103,7 +100,8 @@ export function PosClient({
       const res = await saveOrder({
         orderId: editing?.order.id,
         type,
-        tableId: tableId || null,
+        tableId: type === "DINE_IN" ? tableId || null : null,
+        guests: type === "DINE_IN" && guests ? guests : null,
         customerName: customer,
         items: cart.map((l) => ({ productId: l.productId, qty: l.qty, note: l.note })),
         discount: { type: discType, value: discValue },
@@ -115,6 +113,9 @@ export function PosClient({
       }
       setShowPay(false);
       setDone({ orderId: res.orderId, code: res.code, change: res.change, paid: !!pay });
+      // cetak otomatis sesuai pengaturan printer outlet
+      if (pay && outlet.autoPrint) printOrder(res.orderId, outlet.kitchen && !editing ? "both" : "receipt");
+      else if (!pay && outlet.kitchen) printOrder(res.orderId, "kitchen");
       router.refresh();
     });
   }
@@ -133,8 +134,14 @@ export function PosClient({
             </div>
           )}
           <div className="flex flex-col gap-2">
-            <button className="btn-secondary" onClick={() => window.open(`/struk/${done.orderId}`, "_blank", "width=420,height=700")}>
-              <Printer size={16} /> {done.paid ? "Cetak Struk" : "Cetak Tagihan / Order Dapur"}
+            <button className="btn-secondary" onClick={() => printOrder(done.orderId, done.paid ? "receipt" : "bill")}>
+              <Printer size={16} /> {done.paid ? "Cetak Ulang Struk" : "Cetak Tagihan"}
+            </button>
+            <button className="btn-secondary" onClick={() => printOrder(done.orderId, "kitchen")}>
+              <Printer size={16} /> Cetak Tiket Dapur
+            </button>
+            <button className="btn-ghost text-xs" onClick={() => previewOrder(done.orderId, done.paid ? "receipt" : "bill")}>
+              Lihat struk
             </button>
             <button className="btn-primary" onClick={reset} autoFocus>
               Pesanan Baru
@@ -150,7 +157,10 @@ export function PosClient({
       {/* Daftar produk */}
       <section className="flex min-h-0 flex-1 flex-col px-4 pt-16 pb-4 sm:px-6 lg:pt-6">
         <div className="mb-4 flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-bold">{editing ? `Ubah ${editing.order.code}` : "Kasir"}</h1>
+          <div>
+            <h1 className="text-2xl font-bold">{editing ? `Ubah ${editing.order.code}` : "Kasir"}</h1>
+            <p className="text-xs text-stone-500">{outlet.name}</p>
+          </div>
           <div className="relative ml-auto w-full sm:w-64">
             <Search size={16} className="absolute top-1/2 left-3 -translate-y-1/2 text-stone-400" />
             <input className="input pl-9" placeholder="Cari menu..." value={q} onChange={(e) => setQ(e.target.value)} />
@@ -171,14 +181,12 @@ export function PosClient({
         </div>
         <div className="grid min-h-0 flex-1 auto-rows-min grid-cols-2 gap-3 overflow-y-auto sm:grid-cols-3 xl:grid-cols-4">
           {filtered.map((p) => {
-            const out = p.trackStock && p.stock <= 0;
             const inCart = cartQty(p.id);
             return (
               <button
                 key={p.id}
-                disabled={out}
                 onClick={() => add(p)}
-                className="card relative flex flex-col items-start p-4 text-left transition hover:border-brand-400 hover:shadow-md disabled:opacity-40"
+                className="card relative flex min-h-24 flex-col items-start p-4 text-left transition hover:border-brand-400 hover:shadow-md active:scale-[0.98]"
               >
                 {inCart > 0 && (
                   <span className="absolute top-2 right-2 flex h-6 min-w-6 items-center justify-center rounded-full bg-brand-600 px-1.5 text-xs font-bold text-white">
@@ -187,9 +195,6 @@ export function PosClient({
                 )}
                 <span className="mb-1 line-clamp-2 pr-6 font-semibold text-stone-900">{p.name}</span>
                 <span className="mt-auto text-sm font-bold text-brand-700">{rupiah(p.price)}</span>
-                <span className={`text-xs ${p.trackStock && p.stock <= p.minStock ? "text-red-600" : "text-stone-400"}`}>
-                  {p.trackStock ? (out ? "Habis" : `Stok ${p.stock}`) : "Tersedia"}
-                </span>
               </button>
             );
           })}
@@ -200,36 +205,46 @@ export function PosClient({
       {/* Keranjang */}
       <aside className="flex w-full flex-col border-t border-stone-200 bg-white lg:h-screen lg:w-[400px] lg:border-t-0 lg:border-l">
         <div className="space-y-3 border-b border-stone-200 p-4">
-          <div className="grid grid-cols-2 gap-1 rounded-lg bg-stone-100 p-1">
-            {(["DINE_IN", "TAKEAWAY"] as const).map((t) => (
+          <div className="grid grid-cols-3 gap-1 rounded-lg bg-stone-100 p-1">
+            {TYPES.map((t) => (
               <button
-                key={t}
-                onClick={() => setType(t)}
-                className={`rounded-md py-1.5 text-sm font-medium ${type === t ? "bg-white shadow-sm" : "text-stone-500"}`}
+                key={t.id}
+                onClick={() => setType(t.id)}
+                className={`rounded-md py-1.5 text-xs font-medium sm:text-sm ${type === t.id ? "bg-white shadow-sm" : "text-stone-500"}`}
               >
-                {t === "DINE_IN" ? "Makan di tempat" : "Bawa pulang"}
+                {t.label}
               </button>
             ))}
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            {type === "DINE_IN" && (
-              <select className="input" value={tableId} onChange={(e) => setTableId(e.target.value ? Number(e.target.value) : "")}>
-                <option value="">Pilih meja</option>
+          {type === "DINE_IN" ? (
+            <div className="grid grid-cols-[1fr_72px_1fr] gap-2">
+              <select className="input" value={tableId} onChange={(e) => setTableId(e.target.value ? Number(e.target.value) : "")} aria-label="No. meja">
+                <option value="">No. meja</option>
                 {tables.map((t) => (
                   <option key={t.id} value={t.id} disabled={occupiedTableIds.includes(t.id)}>
-                    {t.name}
+                    Meja {t.number}
                     {occupiedTableIds.includes(t.id) ? " (terisi)" : ""}
                   </option>
                 ))}
               </select>
-            )}
+              <input
+                className="input"
+                inputMode="numeric"
+                placeholder="Tamu"
+                aria-label="Jumlah tamu"
+                value={guests}
+                onChange={(e) => setGuests(Number(e.target.value.replace(/\D/g, "")) || "")}
+              />
+              <input className="input" placeholder="Nama" value={customer} onChange={(e) => setCustomer(e.target.value)} />
+            </div>
+          ) : (
             <input
-              className={`input ${type === "TAKEAWAY" ? "col-span-2" : ""}`}
-              placeholder="Nama pelanggan"
+              className="input"
+              placeholder={type === "ONLINE" ? "Platform / no. order (mis. GoFood #123)" : "Nama pelanggan"}
               value={customer}
               onChange={(e) => setCustomer(e.target.value)}
             />
-          </div>
+          )}
         </div>
 
         <div className="min-h-[160px] flex-1 overflow-y-auto p-4">

@@ -40,4 +40,4 @@ export async function verifySession(token: string | undefined): Promise<SessionP
 }
 
 /** Halaman yang hanya boleh diakses ADMIN */
-export const ADMIN_PATHS = ["/dashboard", "/produk", "/kategori", "/stok", "/meja", "/pengguna", "/pengaturan"];
+export const ADMIN_PATHS = ["/dashboard", "/laporan", "/analisis", "/produk", "/kategori", "/meja", "/outlet", "/printer", "/pengguna", "/pengaturan"];

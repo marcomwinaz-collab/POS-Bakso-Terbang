@@ -6,17 +6,23 @@ import { deleteUser, saveUser } from "@/app/actions/admin";
 import { PageHeader } from "@/components/PageHeader";
 import { Checkbox, Field, FormModal } from "@/components/FormModal";
 
-type U = { id: number; name: string; username: string; role: "ADMIN" | "KASIR"; active: boolean };
+type U = { id: number; name: string; username: string; role: "ADMIN" | "KASIR"; outletId: number | null; active: boolean };
 
-export function UsersClient({ users, meId }: { users: U[]; meId: number }) {
+export function UsersClient({ users, meId, outlets }: { users: U[]; meId: number; outlets: { id: number; name: string }[] }) {
   const [edit, setEdit] = useState<U | "new" | null>(null);
+  const [role, setRole] = useState<"ADMIN" | "KASIR">("KASIR");
+  const outletName = new Map(outlets.map((o) => [o.id, o.name]));
+  const open = (x: U | "new") => {
+    setRole(x === "new" ? "KASIR" : x.role);
+    setEdit(x);
+  };
   const [, start] = useTransition();
   const u = edit === "new" ? null : edit;
 
   return (
     <main>
       <PageHeader title="Pengguna" subtitle="Akun admin dan kasir">
-        <button className="btn-primary" onClick={() => setEdit("new")}>
+        <button className="btn-primary" onClick={() => open("new")}>
           <Plus size={16} /> Tambah Pengguna
         </button>
       </PageHeader>
@@ -28,6 +34,7 @@ export function UsersClient({ users, meId }: { users: U[]; meId: number }) {
                 <th>Nama</th>
                 <th>Username</th>
                 <th>Peran</th>
+                <th>Outlet</th>
                 <th>Status</th>
                 <th></th>
               </tr>
@@ -44,9 +51,10 @@ export function UsersClient({ users, meId }: { users: U[]; meId: number }) {
                       {x.role === "ADMIN" ? "Admin" : "Kasir"}
                     </span>
                   </td>
+                  <td>{x.role === "ADMIN" ? "Semua outlet" : x.outletId ? outletName.get(x.outletId) : "-"}</td>
                   <td>{x.active ? "Aktif" : "Nonaktif"}</td>
                   <td className="text-right whitespace-nowrap">
-                    <button className="btn-ghost p-1.5" onClick={() => setEdit(x)} aria-label="Ubah">
+                    <button className="btn-ghost p-1.5" onClick={() => open(x)} aria-label="Ubah">
                       <Pencil size={16} />
                     </button>
                     {x.id !== meId && (
@@ -82,12 +90,23 @@ export function UsersClient({ users, meId }: { users: U[]; meId: number }) {
               <input name="username" className="input" defaultValue={u?.username} required autoComplete="off" />
             </Field>
             <Field label="Peran">
-              <select name="role" className="input" defaultValue={u?.role ?? "KASIR"}>
+              <select name="role" className="input" value={role} onChange={(e) => setRole(e.target.value as "ADMIN" | "KASIR")}>
                 <option value="KASIR">Kasir</option>
                 <option value="ADMIN">Admin</option>
               </select>
             </Field>
           </div>
+          {role === "KASIR" ? (
+            <Field label="Outlet tempat bertugas">
+              <select name="outletId" className="input" defaultValue={u?.outletId ?? outlets[0]?.id} required>
+                {outlets.map((o) => (
+                  <option key={o.id} value={o.id}>{o.name}</option>
+                ))}
+              </select>
+            </Field>
+          ) : (
+            <p className="rounded-lg bg-stone-50 px-3 py-2 text-xs text-stone-500">Admin dapat mengakses semua outlet, laporan, dan pengaturan.</p>
+          )}
           <Field label={u ? "Password baru" : "Password"} hint={u ? "Kosongkan jika tidak ingin mengganti" : "Minimal 6 karakter"}>
             <input name="password" type="password" className="input" required={!u} autoComplete="new-password" />
           </Field>

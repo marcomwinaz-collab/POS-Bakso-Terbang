@@ -8,18 +8,9 @@ export default async function PengaturanPage() {
   const s = await db.query.settings.findFirst();
   return (
     <main>
-      <PageHeader title="Pengaturan" subtitle="Informasi toko, pajak, dan struk" />
+      <PageHeader title="Pengaturan Umum" subtitle="Pajak & service diatur per outlet di menu Outlet; struk di menu Printer & Struk" />
       <div className="px-4 pb-8 sm:px-6">
-        <SettingsForm
-          settings={{
-            storeName: s?.storeName ?? "Bakso Terbang",
-            address: s?.address ?? "",
-            phone: s?.phone ?? "",
-            taxPercent: s?.taxPercent ?? 0,
-            servicePercent: s?.servicePercent ?? 0,
-            receiptFooter: s?.receiptFooter ?? "",
-          }}
-        />
+        <SettingsForm businessName={s?.businessName ?? "Bakso Terbang"} />
       </div>
     </main>
   );

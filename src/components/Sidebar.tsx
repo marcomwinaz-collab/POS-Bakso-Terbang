@@ -1,42 +1,79 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 import {
   LayoutDashboard,
   ShoppingCart,
   ClipboardList,
   Receipt,
+  FileBarChart,
+  LineChart,
   UtensilsCrossed,
   Tags,
-  Boxes,
   Armchair,
+  Store,
+  Printer,
   Users,
   Settings,
   LogOut,
   Menu,
   X,
+  MapPin,
 } from "lucide-react";
 import { logout } from "@/app/actions/auth";
+import { switchOutlet } from "@/app/actions/orders";
 
-const NAV = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, admin: true },
-  { href: "/kasir", label: "Kasir", icon: ShoppingCart },
-  { href: "/pesanan", label: "Open Bill", icon: ClipboardList },
-  { href: "/transaksi", label: "Transaksi", icon: Receipt },
-  { href: "/produk", label: "Produk", icon: UtensilsCrossed, admin: true },
-  { href: "/kategori", label: "Kategori", icon: Tags, admin: true },
-  { href: "/stok", label: "Stok", icon: Boxes, admin: true },
-  { href: "/meja", label: "Meja", icon: Armchair, admin: true },
-  { href: "/pengguna", label: "Pengguna", icon: Users, admin: true },
-  { href: "/pengaturan", label: "Pengaturan", icon: Settings, admin: true },
+const GROUPS = [
+  {
+    title: "Operasional",
+    items: [
+      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, admin: true },
+      { href: "/kasir", label: "Kasir", icon: ShoppingCart },
+      { href: "/pesanan", label: "Open Bill", icon: ClipboardList },
+      { href: "/transaksi", label: "Transaksi", icon: Receipt },
+    ],
+  },
+  {
+    title: "Laporan",
+    admin: true,
+    items: [
+      { href: "/laporan", label: "Laporan Sales", icon: FileBarChart, admin: true },
+      { href: "/analisis", label: "Analisis", icon: LineChart, admin: true },
+    ],
+  },
+  {
+    title: "Pengaturan",
+    admin: true,
+    items: [
+      { href: "/produk", label: "Produk & Harga", icon: UtensilsCrossed, admin: true },
+      { href: "/kategori", label: "Kategori", icon: Tags, admin: true },
+      { href: "/meja", label: "No. Meja", icon: Armchair, admin: true },
+      { href: "/outlet", label: "Outlet", icon: Store, admin: true },
+      { href: "/printer", label: "Printer & Struk", icon: Printer, admin: true },
+      { href: "/pengguna", label: "Pengguna", icon: Users, admin: true },
+      { href: "/pengaturan", label: "Umum", icon: Settings, admin: true },
+    ],
+  },
 ];
 
-export function Sidebar({ user }: { user: { name: string; role: string } }) {
+type O = { id: number; name: string };
+
+export function Sidebar({
+  user,
+  activeOutlet,
+  outlets,
+}: {
+  user: { name: string; role: string };
+  activeOutlet: O | null;
+  outlets: O[];
+}) {
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
-  const items = NAV.filter((n) => !n.admin || user.role === "ADMIN");
+  const [, start] = useTransition();
+  const isAdmin = user.role === "ADMIN";
 
   return (
     <>
@@ -53,7 +90,7 @@ export function Sidebar({ user }: { user: { name: string; role: string } }) {
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex items-center gap-3 px-5 py-5">
+        <div className="flex items-center gap-3 px-5 pt-5 pb-3">
           <img src="/logo.svg" alt="" className="h-9 w-9" />
           <div className="leading-tight">
             <div className="font-bold text-white">Bakso Terbang</div>
@@ -63,28 +100,64 @@ export function Sidebar({ user }: { user: { name: string; role: string } }) {
             <X size={18} />
           </button>
         </div>
-        <nav className="flex-1 space-y-0.5 overflow-y-auto px-3">
-          {items.map(({ href, label, icon: Icon }) => {
-            const active = pathname === href || pathname.startsWith(href + "/");
-            return (
-              <Link
-                key={href}
-                href={href}
-                onClick={() => setOpen(false)}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${
-                  active ? "bg-brand-600 text-white" : "hover:bg-stone-800 hover:text-white"
-                }`}
-              >
-                <Icon size={18} />
-                {label}
-              </Link>
-            );
-          })}
+
+        <div className="mx-3 mb-3 rounded-lg bg-stone-800 px-3 py-2">
+          <div className="flex items-center gap-1 text-[11px] text-stone-400">
+            <MapPin size={12} /> Outlet aktif
+          </div>
+          {isAdmin && outlets.length > 1 ? (
+            <select
+              className="mt-0.5 w-full bg-transparent text-sm font-medium text-white outline-none"
+              value={activeOutlet?.id ?? ""}
+              onChange={(e) =>
+                start(async () => {
+                  await switchOutlet(Number(e.target.value));
+                  router.refresh();
+                })
+              }
+            >
+              {outlets.map((o) => (
+                <option key={o.id} value={o.id} className="text-stone-900">
+                  {o.name}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <div className="text-sm font-medium text-white">{activeOutlet?.name ?? "Tidak ada outlet aktif"}</div>
+          )}
+        </div>
+
+        <nav className="flex-1 space-y-4 overflow-y-auto px-3 pb-3">
+          {GROUPS.filter((g) => !g.admin || isAdmin).map((g) => (
+            <div key={g.title}>
+              <div className="mb-1 px-3 text-[11px] font-semibold tracking-wider text-stone-500 uppercase">{g.title}</div>
+              <div className="space-y-0.5">
+                {g.items
+                  .filter((n) => !n.admin || isAdmin)
+                  .map(({ href, label, icon: Icon }) => {
+                    const active = pathname === href || pathname.startsWith(href + "/");
+                    return (
+                      <Link
+                        key={href}
+                        href={href}
+                        onClick={() => setOpen(false)}
+                        className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${
+                          active ? "bg-brand-600 text-white" : "hover:bg-stone-800 hover:text-white"
+                        }`}
+                      >
+                        <Icon size={18} />
+                        {label}
+                      </Link>
+                    );
+                  })}
+              </div>
+            </div>
+          ))}
         </nav>
         <div className="border-t border-stone-800 p-4">
           <div className="mb-3 text-sm">
             <div className="font-medium text-white">{user.name}</div>
-            <div className="text-xs text-stone-400">{user.role === "ADMIN" ? "Administrator" : "Kasir"}</div>
+            <div className="text-xs text-stone-400">{isAdmin ? "Administrator" : "Kasir"}</div>
           </div>
           <form action={logout}>
             <button className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-stone-800 hover:text-white">

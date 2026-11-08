@@ -42,10 +42,19 @@ export const PAYMENT_LABEL: Record<string, string> = {
 export const TYPE_LABEL: Record<string, string> = {
   DINE_IN: "Makan di tempat",
   TAKEAWAY: "Bawa pulang",
+  ONLINE: "Online / Ojol",
 };
 
 export const STATUS_LABEL: Record<string, string> = {
   OPEN: "Open Bill",
   PAID: "Lunas",
   VOID: "Batal",
+  REFUNDED: "Refund",
+};
+
+export const STATUS_STYLE: Record<string, string> = {
+  PAID: "bg-green-100 text-green-800",
+  OPEN: "bg-amber-100 text-amber-800",
+  VOID: "bg-stone-200 text-stone-600",
+  REFUNDED: "bg-red-100 text-red-800",
 };

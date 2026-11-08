@@ -2,27 +2,31 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Printer, Undo2 } from "lucide-react";
-import { voidOrder } from "@/app/actions/orders";
+import { Eye, Printer, Undo2 } from "lucide-react";
+import { refundOrder } from "@/app/actions/orders";
+import { previewOrder, printOrder } from "@/lib/print";
 
-export function TransactionActions({ id, code, canVoid }: { id: number; code: string; canVoid: boolean }) {
+export function TransactionActions({ id, code, status, canRefund }: { id: number; code: string; status: string; canRefund: boolean }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   return (
     <div className="flex justify-end gap-1">
-      <button className="btn-ghost p-1.5" title="Lihat / cetak struk" onClick={() => window.open(`/struk/${id}`, "_blank", "width=420,height=700")}>
+      <button className="btn-ghost p-1.5" title="Lihat struk" onClick={() => previewOrder(id, status === "OPEN" ? "bill" : "receipt")}>
+        <Eye size={16} />
+      </button>
+      <button className="btn-ghost p-1.5" title="Cetak ulang" onClick={() => printOrder(id, status === "OPEN" ? "bill" : "receipt")}>
         <Printer size={16} />
       </button>
-      {canVoid && (
+      {canRefund && (
         <button
           className="btn-ghost p-1.5 text-red-600"
-          title="Batalkan transaksi (stok dikembalikan)"
+          title="Refund transaksi"
           disabled={pending}
           onClick={() => {
-            const reason = prompt(`Batalkan transaksi ${code}? Tulis alasannya:`);
-            if (reason === null) return;
+            const reason = prompt(`Refund transaksi ${code}? Tulis alasannya:`);
+            if (!reason) return;
             start(async () => {
-              const r = await voidOrder(id, reason);
+              const r = await refundOrder(id, reason);
               if (!r.ok) alert(r.error);
               router.refresh();
             });

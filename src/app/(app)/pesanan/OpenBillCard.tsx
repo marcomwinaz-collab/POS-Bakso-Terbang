@@ -3,13 +3,25 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Clock, Pencil, Printer, XCircle } from "lucide-react";
+import { ChefHat, Clock, Pencil, Printer, XCircle } from "lucide-react";
 import type { Order, OrderItem } from "@/db/schema";
-import { formatDateTime, rupiah } from "@/lib/format";
-import { payOrder, voidOrder } from "@/app/actions/orders";
+import { formatDateTime, rupiah, TYPE_LABEL } from "@/lib/format";
+import { cancelOrder, payOrder } from "@/app/actions/orders";
+import { printOrder } from "@/lib/print";
 import { PaymentModal } from "@/components/PaymentModal";
 
-export function OpenBillCard({ order, items, tableName }: { order: Order; items: OrderItem[]; tableName: string | null }) {
+export function OpenBillCard({
+  order,
+  items,
+  autoPrint,
+  kitchen,
+}: {
+  order: Order;
+  items: OrderItem[];
+  autoPrint: boolean;
+  kitchen: boolean;
+}) {
+  void kitchen;
   const router = useRouter();
   const [showPay, setShowPay] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -19,7 +31,7 @@ export function OpenBillCard({ order, items, tableName }: { order: Order; items:
     <div className="card flex flex-col p-4">
       <div className="mb-2 flex items-start justify-between">
         <div>
-          <div className="text-lg font-bold">{tableName ?? "Bawa pulang"}</div>
+          <div className="text-lg font-bold">{order.type === "DINE_IN" ? `Meja ${order.tableNumber ?? "-"}` : TYPE_LABEL[order.type]}</div>
           <div className="text-xs text-stone-500">
             {order.code}
             {order.customerName ? ` · ${order.customerName}` : ""}
@@ -52,8 +64,11 @@ export function OpenBillCard({ order, items, tableName }: { order: Order; items:
         <Link href={`/kasir?order=${order.id}`} className="btn-secondary px-3" title="Ubah pesanan">
           <Pencil size={16} />
         </Link>
-        <button className="btn-secondary px-3" title="Cetak tagihan" onClick={() => window.open(`/struk/${order.id}`, "_blank", "width=420,height=700")}>
+        <button className="btn-secondary px-3" title="Cetak tagihan" onClick={() => printOrder(order.id, "bill")}>
           <Printer size={16} />
+        </button>
+        <button className="btn-secondary px-3" title="Cetak ulang tiket dapur" onClick={() => printOrder(order.id, "kitchen")}>
+          <ChefHat size={16} />
         </button>
         <button
           className="btn-secondary px-3 text-red-600"
@@ -63,7 +78,7 @@ export function OpenBillCard({ order, items, tableName }: { order: Order; items:
             const reason = prompt("Alasan pembatalan pesanan " + order.code + "?");
             if (reason === null) return;
             start(async () => {
-              const r = await voidOrder(order.id, reason);
+              const r = await cancelOrder(order.id, reason);
               if (!r.ok) setError(r.error);
               router.refresh();
             });
@@ -83,8 +98,8 @@ export function OpenBillCard({ order, items, tableName }: { order: Order; items:
               const r = await payOrder(order.id, method, paid);
               if (!r.ok) return setError(r.error);
               setShowPay(false);
+              if (autoPrint) printOrder(order.id, "receipt");
               if (method === "CASH" && r.change) alert(`Kembalian: ${rupiah(r.change)}`);
-              window.open(`/struk/${order.id}`, "_blank", "width=420,height=700");
               router.refresh();
             })
           }
