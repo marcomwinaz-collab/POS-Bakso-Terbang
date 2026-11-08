@@ -76,7 +76,7 @@ export function Receipt({ mode, businessName, outlet, order, items, cashierName,
   return (
     <div className="receipt-page bg-white p-3 font-mono leading-snug text-black" style={wrap}>
       <div className="text-center">
-        {outlet.showLogo && <img src="/logo.svg" alt="" className="mx-auto mb-1 h-10 w-10 grayscale" />}
+        {outlet.showLogo && <img src="/logo.png" alt="" className="mx-auto mb-1 w-[60%] grayscale contrast-125" />}
         <div className="text-[1.25em] font-bold">{businessName}</div>
         <div>{outlet.name}</div>
         {outlet.address && <div>{outlet.address}</div>}

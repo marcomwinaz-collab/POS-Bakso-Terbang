@@ -91,10 +91,9 @@ export function Sidebar({
         }`}
       >
         <div className="flex items-center gap-3 px-5 pt-5 pb-3">
-          <img src="/logo.svg" alt="" className="h-9 w-9" />
           <div className="leading-tight">
-            <div className="font-bold text-white">Bakso Terbang</div>
-            <div className="text-xs text-stone-400">Point of Sale</div>
+            <img src="/logo.png" alt="Bakso Terbang" className="w-40" />
+            <div className="mt-1 pl-1 text-[11px] tracking-wider text-stone-400 uppercase">Point of Sale</div>
           </div>
           <button className="ml-auto lg:hidden" onClick={() => setOpen(false)} aria-label="Tutup menu">
             <X size={18} />

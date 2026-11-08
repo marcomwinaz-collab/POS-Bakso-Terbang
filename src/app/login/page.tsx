@@ -10,8 +10,8 @@ export default function LoginPage() {
     <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-brand-700 via-brand-600 to-brand-400 p-4">
       <div className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-2xl">
         <div className="mb-6 text-center">
-          <img src="/logo.svg" alt="" className="mx-auto mb-3 h-14 w-14" />
-          <h1 className="text-2xl font-bold text-stone-900">Bakso Terbang</h1>
+          <img src="/logo.png" alt="Bakso Terbang" className="mx-auto mb-2 w-56" />
+          <h1 className="sr-only">Bakso Terbang</h1>
           <p className="text-sm text-stone-500">Masuk ke sistem kasir</p>
         </div>
         <form action={action} className="space-y-4">
