@@ -10,7 +10,8 @@
     "db:push": "drizzle-kit push",
     "db:seed": "tsx scripts/seed.ts",
     "db:demo": "tsx scripts/demo-data.ts",
-    "setup": "npm run db:push && npm run db:seed"
+    "setup": "tsx scripts/seed.ts",
+    "db:generate": "drizzle-kit generate && tsx scripts/build-migrations.ts"
   },
   "dependencies": {
     "@libsql/client": "^0.18.0",

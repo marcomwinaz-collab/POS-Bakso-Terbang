@@ -1,0 +1,24 @@
+// File ini dibuat otomatis oleh scripts/build-migrations.ts — jangan diedit manual.
+export const MIGRATIONS: { name: string; statements: string[] }[] = [
+  {
+    "name": "0000_init",
+    "statements": [
+      "CREATE TABLE `categories` (\n\t`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,\n\t`name` text NOT NULL,\n\t`sort` integer DEFAULT 0 NOT NULL\n);",
+      "CREATE TABLE `dining_tables` (\n\t`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,\n\t`outlet_id` integer NOT NULL,\n\t`number` text NOT NULL,\n\t`capacity` integer DEFAULT 4 NOT NULL,\n\t`active` integer DEFAULT true NOT NULL,\n\tFOREIGN KEY (`outlet_id`) REFERENCES `outlets`(`id`) ON UPDATE no action ON DELETE cascade\n);",
+      "CREATE INDEX `dining_tables_outlet_idx` ON `dining_tables` (`outlet_id`);",
+      "CREATE TABLE `order_items` (\n\t`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,\n\t`order_id` integer NOT NULL,\n\t`product_id` integer,\n\t`name` text NOT NULL,\n\t`category_name` text,\n\t`price` integer NOT NULL,\n\t`qty` integer NOT NULL,\n\t`note` text,\n\t`subtotal` integer NOT NULL,\n\tFOREIGN KEY (`order_id`) REFERENCES `orders`(`id`) ON UPDATE no action ON DELETE cascade,\n\tFOREIGN KEY (`product_id`) REFERENCES `products`(`id`) ON UPDATE no action ON DELETE set null\n);",
+      "CREATE INDEX `order_items_order_idx` ON `order_items` (`order_id`);",
+      "CREATE TABLE `orders` (\n\t`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,\n\t`code` text NOT NULL,\n\t`outlet_id` integer NOT NULL,\n\t`type` text DEFAULT 'DINE_IN' NOT NULL,\n\t`table_id` integer,\n\t`table_number` text,\n\t`customer_name` text,\n\t`guests` integer,\n\t`status` text DEFAULT 'OPEN' NOT NULL,\n\t`subtotal` integer DEFAULT 0 NOT NULL,\n\t`discount` integer DEFAULT 0 NOT NULL,\n\t`service` integer DEFAULT 0 NOT NULL,\n\t`tax` integer DEFAULT 0 NOT NULL,\n\t`total` integer DEFAULT 0 NOT NULL,\n\t`payment_method` text,\n\t`paid_amount` integer DEFAULT 0 NOT NULL,\n\t`change_amount` integer DEFAULT 0 NOT NULL,\n\t`note` text,\n\t`cashier_id` integer,\n\t`created_at` integer DEFAULT (unixepoch() * 1000) NOT NULL,\n\t`paid_at` integer,\n\t`cancel_reason` text,\n\t`refunded_at` integer,\n\t`refunded_by_id` integer,\n\tFOREIGN KEY (`outlet_id`) REFERENCES `outlets`(`id`) ON UPDATE no action ON DELETE no action,\n\tFOREIGN KEY (`table_id`) REFERENCES `dining_tables`(`id`) ON UPDATE no action ON DELETE set null,\n\tFOREIGN KEY (`cashier_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE set null,\n\tFOREIGN KEY (`refunded_by_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE set null\n);",
+      "CREATE UNIQUE INDEX `orders_code_unique` ON `orders` (`code`);",
+      "CREATE INDEX `orders_status_idx` ON `orders` (`status`);",
+      "CREATE INDEX `orders_paid_at_idx` ON `orders` (`paid_at`);",
+      "CREATE INDEX `orders_outlet_idx` ON `orders` (`outlet_id`);",
+      "CREATE TABLE `outlets` (\n\t`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,\n\t`code` text NOT NULL,\n\t`name` text NOT NULL,\n\t`address` text DEFAULT '' NOT NULL,\n\t`phone` text DEFAULT '' NOT NULL,\n\t`tax_percent` integer DEFAULT 0 NOT NULL,\n\t`service_percent` integer DEFAULT 0 NOT NULL,\n\t`active` integer DEFAULT true NOT NULL,\n\t`paper_width` integer DEFAULT 80 NOT NULL,\n\t`font_size` integer DEFAULT 12 NOT NULL,\n\t`receipt_header` text DEFAULT '' NOT NULL,\n\t`receipt_footer` text DEFAULT 'Terima kasih atas kunjungan Anda!' NOT NULL,\n\t`show_logo` integer DEFAULT true NOT NULL,\n\t`auto_print_receipt` integer DEFAULT true NOT NULL,\n\t`receipt_copies` integer DEFAULT 1 NOT NULL,\n\t`print_kitchen_ticket` integer DEFAULT false NOT NULL,\n\t`created_at` integer DEFAULT (unixepoch() * 1000) NOT NULL\n);",
+      "CREATE UNIQUE INDEX `outlets_code_unique` ON `outlets` (`code`);",
+      "CREATE TABLE `products` (\n\t`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,\n\t`name` text NOT NULL,\n\t`category_id` integer,\n\t`price` integer DEFAULT 0 NOT NULL,\n\t`active` integer DEFAULT true NOT NULL,\n\t`created_at` integer DEFAULT (unixepoch() * 1000) NOT NULL,\n\tFOREIGN KEY (`category_id`) REFERENCES `categories`(`id`) ON UPDATE no action ON DELETE set null\n);",
+      "CREATE TABLE `settings` (\n\t`id` integer PRIMARY KEY NOT NULL,\n\t`business_name` text DEFAULT 'Bakso Terbang' NOT NULL\n);",
+      "CREATE TABLE `users` (\n\t`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,\n\t`name` text NOT NULL,\n\t`username` text NOT NULL,\n\t`password_hash` text NOT NULL,\n\t`role` text DEFAULT 'KASIR' NOT NULL,\n\t`outlet_id` integer,\n\t`active` integer DEFAULT true NOT NULL,\n\t`created_at` integer DEFAULT (unixepoch() * 1000) NOT NULL,\n\tFOREIGN KEY (`outlet_id`) REFERENCES `outlets`(`id`) ON UPDATE no action ON DELETE set null\n);",
+      "CREATE UNIQUE INDEX `users_username_unique` ON `users` (`username`);"
+    ]
+  }
+];

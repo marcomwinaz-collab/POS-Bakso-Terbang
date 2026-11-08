@@ -41,7 +41,7 @@ git clone https://github.com/marcomwinaz-collab/pos-bakso-terbang.git
 cd pos-bakso-terbang
 npm install
 cp .env.example .env        # lalu ubah AUTH_SECRET
-npm run setup               # membuat tabel + data awal (menu, meja, akun)
+npm run setup               # membuat tabel + data awal (opsional, juga otomatis saat aplikasi start)
 npm run dev
 ```
 
@@ -77,7 +77,7 @@ Data tersimpan di file `data/pos.db`. **Backup file ini secara rutin.**
 ### Opsi B: Online di Vercel + Turso (gratis untuk skala kecil)
 
 1. Buat database di [Turso](https://turso.tech), salin URL (`libsql://...`) dan token-nya.
-2. Isi `.env` lokal dengan `DATABASE_URL` dan `DATABASE_AUTH_TOKEN` Turso, lalu jalankan `npm run setup` sekali.
+2. (Tidak perlu menjalankan apa pun — tabel dan data awal dibuat otomatis saat aplikasi pertama kali berjalan.)
 3. Import repo ini di [Vercel](https://vercel.com), tambahkan environment variable `DATABASE_URL`, `DATABASE_AUTH_TOKEN`, `AUTH_SECRET`, dan `TZ_OFFSET_HOURS=7`.
 4. Deploy.
 
@@ -122,6 +122,5 @@ scripts/              Seed data awal & data demo
 |----------|--------|
 | `npm run dev` | Mode pengembangan |
 | `npm run build` / `npm start` | Build & jalankan produksi |
-| `npm run db:push` | Sinkronkan skema ke database (setelah mengubah `schema.ts`) |
-| `npm run db:seed` | Isi data awal (hanya jika database masih kosong) |
+| `npm run db:generate` | Buat migrasi baru setelah mengubah `schema.ts` (diterapkan otomatis saat start) |
 | `npm run db:demo` | Tambah transaksi contoh |
