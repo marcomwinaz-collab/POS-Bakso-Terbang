@@ -133,7 +133,29 @@ export const orderItems = sqliteTable(
   (t) => [index("order_items_order_idx").on(t.orderId)],
 );
 
+/** Sesi kasir: dibuka dengan modal awal, ditutup (settlement) dengan uang yang dihitung di laci */
+export const cashierShifts = sqliteTable(
+  "cashier_shifts",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    outletId: integer("outlet_id")
+      .notNull()
+      .references(() => outlets.id),
+    status: text("status", { enum: ["OPEN", "CLOSED"] }).notNull().default("OPEN"),
+    openingCash: integer("opening_cash").notNull().default(0),
+    openedById: integer("opened_by_id").references(() => users.id, { onDelete: "set null" }),
+    openedAt: integer("opened_at", { mode: "timestamp_ms" }).notNull(),
+    closedById: integer("closed_by_id").references(() => users.id, { onDelete: "set null" }),
+    closedAt: integer("closed_at", { mode: "timestamp_ms" }),
+    expectedCash: integer("expected_cash"),
+    countedCash: integer("counted_cash"),
+    note: text("note"),
+  },
+  (t) => [index("cashier_shifts_outlet_idx").on(t.outletId, t.status)],
+);
+
 export type User = typeof users.$inferSelect;
+export type CashierShift = typeof cashierShifts.$inferSelect;
 export type Outlet = typeof outlets.$inferSelect;
 export type Product = typeof products.$inferSelect;
 export type Category = typeof categories.$inferSelect;

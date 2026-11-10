@@ -23,6 +23,15 @@ export function printOrder(orderId: number, mode: "receipt" | "kitchen" | "bill"
   printUrl(`/struk/${orderId}?mode=${mode}`);
 }
 
+/** Laporan tutup kasir: tanpa `only` mencetak 2 lembar (Transaksi Penjualan + Penjualan Menu) */
+export function printShift(shiftId: number, only?: "transaksi" | "menu") {
+  printUrl(`/struk/tutup-kasir/${shiftId}${only ? `?only=${only}` : ""}`);
+}
+
+export function previewShift(shiftId: number) {
+  window.open(`/struk/tutup-kasir/${shiftId}`, "_blank", "width=420,height=720");
+}
+
 export function previewOrder(orderId: number, mode: "receipt" | "kitchen" | "bill" = "receipt") {
   window.open(`/struk/${orderId}?mode=${mode}`, "_blank", "width=420,height=720");
 }
