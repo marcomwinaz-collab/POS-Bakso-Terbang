@@ -43,7 +43,7 @@ export function ShiftReceipt({ kind, outlet, report, openingCash, printedAt }: P
       {kind === "transaksi" ? (
         <>
           <Row l="Modal Awal" r={n(openingCash)} />
-          {report.byMethod.map((m) => (
+          {report.byMethod.filter((m) => m.method === "CASH" || m.count > 0).map((m) => (
             <Row key={m.method} l={PAYMENT_LABEL[m.method]} r={n(m.total)} />
           ))}
           <Row l="Penerimaan Kasir" r={n(report.totalSales)} />

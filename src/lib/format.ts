@@ -37,6 +37,10 @@ export const PAYMENT_LABEL: Record<string, string> = {
   QRIS: "QRIS",
   DEBIT: "Kartu Debit",
   TRANSFER: "Transfer",
+  GOFOOD: "GoFood",
+  GRABFOOD: "GrabFood",
+  SHOPEEFOOD: "ShopeeFood",
+  TIKTOK: "TikTok Voucher",
 };
 
 export const TYPE_LABEL: Record<string, string> = {

@@ -59,7 +59,7 @@ export default async function TutupKasirPage() {
                   <Line l="Seharusnya ada di laci" r={rupiah(report.expectedCash)} bold />
                 </Section>
                 <Section title="Metode pembayaran">
-                  {report.byMethod.map((m) => (
+                  {report.byMethod.filter((m) => m.method === "CASH" || m.count > 0).map((m) => (
                     <Line key={m.method} l={`${PAYMENT_LABEL[m.method]} (${m.count})`} r={rupiah(m.total)} />
                   ))}
                 </Section>

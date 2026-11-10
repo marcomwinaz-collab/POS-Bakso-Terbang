@@ -7,7 +7,7 @@ const createdAt = () =>
     .default(sql`(unixepoch() * 1000)`);
 
 export const ORDER_TYPES = ["DINE_IN", "TAKEAWAY", "ONLINE"] as const;
-export const PAYMENT_METHODS = ["CASH", "QRIS", "DEBIT", "TRANSFER"] as const;
+export const PAYMENT_METHODS = ["CASH", "QRIS", "DEBIT", "TRANSFER", "GOFOOD", "GRABFOOD", "SHOPEEFOOD", "TIKTOK"] as const;
 
 /** Pengaturan umum usaha (satu baris) */
 export const settings = sqliteTable("settings", {

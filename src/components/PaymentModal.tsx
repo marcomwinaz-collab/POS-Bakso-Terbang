@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Banknote, CreditCard, QrCode, Landmark, X } from "lucide-react";
+import { Banknote, Bike, CreditCard, QrCode, Landmark, ShoppingBag, Ticket, UtensilsCrossed, X } from "lucide-react";
 import { rupiah } from "@/lib/format";
 import type { PaymentMethod } from "@/db/schema";
 
@@ -10,6 +10,10 @@ const METHODS: { id: PaymentMethod; label: string; icon: typeof Banknote }[] = [
   { id: "QRIS", label: "QRIS", icon: QrCode },
   { id: "DEBIT", label: "Debit", icon: CreditCard },
   { id: "TRANSFER", label: "Transfer", icon: Landmark },
+  { id: "GOFOOD", label: "GoFood", icon: Bike },
+  { id: "GRABFOOD", label: "GrabFood", icon: UtensilsCrossed },
+  { id: "SHOPEEFOOD", label: "ShopeeFood", icon: ShoppingBag },
+  { id: "TIKTOK", label: "TikTok Voucher", icon: Ticket },
 ];
 
 function quickAmounts(total: number) {
@@ -57,7 +61,7 @@ export function PaymentModal({
             <button
               key={id}
               onClick={() => setMethod(id)}
-              className={`flex flex-col items-center gap-1 rounded-lg border p-2 text-xs font-medium ${
+              className={`flex flex-col items-center gap-1 rounded-lg border p-2 text-center text-xs leading-tight font-medium ${
                 method === id ? "border-brand-600 bg-brand-50 text-brand-700" : "border-stone-200 hover:bg-stone-50"
               }`}
             >

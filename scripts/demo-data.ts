@@ -47,7 +47,7 @@ async function main() {
         const total = subtotal - discount;
         const r = Math.random();
         const type = r < 0.55 ? "DINE_IN" : r < 0.8 ? "TAKEAWAY" : "ONLINE";
-        const method = type === "ONLINE" ? "TRANSFER" : pick(methods);
+        const method = type === "ONLINE" ? pick(["GOFOOD", "GRABFOOD", "SHOPEEFOOD", "TIKTOK"] as const) : pick(methods);
         const paid = method === "CASH" ? Math.ceil(total / 10000) * 10000 : total;
         const table = type === "DINE_IN" ? pick(outletTables) : null;
         const refunded = Math.random() < 0.015;
