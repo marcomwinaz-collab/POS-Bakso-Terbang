@@ -20,5 +20,12 @@ export const MIGRATIONS: { name: string; statements: string[] }[] = [
       "CREATE TABLE `users` (\n\t`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,\n\t`name` text NOT NULL,\n\t`username` text NOT NULL,\n\t`password_hash` text NOT NULL,\n\t`role` text DEFAULT 'KASIR' NOT NULL,\n\t`outlet_id` integer,\n\t`active` integer DEFAULT true NOT NULL,\n\t`created_at` integer DEFAULT (unixepoch() * 1000) NOT NULL,\n\tFOREIGN KEY (`outlet_id`) REFERENCES `outlets`(`id`) ON UPDATE no action ON DELETE set null\n);",
       "CREATE UNIQUE INDEX `users_username_unique` ON `users` (`username`);"
     ]
+  },
+  {
+    "name": "0001_tutup_kasir",
+    "statements": [
+      "CREATE TABLE IF NOT EXISTS `cashier_shifts` (\n\t`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,\n\t`outlet_id` integer NOT NULL,\n\t`status` text DEFAULT 'OPEN' NOT NULL,\n\t`opening_cash` integer DEFAULT 0 NOT NULL,\n\t`opened_by_id` integer,\n\t`opened_at` integer NOT NULL,\n\t`closed_by_id` integer,\n\t`closed_at` integer,\n\t`expected_cash` integer,\n\t`counted_cash` integer,\n\t`note` text,\n\tFOREIGN KEY (`outlet_id`) REFERENCES `outlets`(`id`) ON UPDATE no action ON DELETE no action,\n\tFOREIGN KEY (`opened_by_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE set null,\n\tFOREIGN KEY (`closed_by_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE set null\n);",
+      "CREATE INDEX IF NOT EXISTS `cashier_shifts_outlet_idx` ON `cashier_shifts` (`outlet_id`,`status`);"
+    ]
   }
 ];

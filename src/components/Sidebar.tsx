@@ -21,6 +21,7 @@ import {
   Menu,
   X,
   MapPin,
+  Wallet,
 } from "lucide-react";
 import { logout } from "@/app/actions/auth";
 import { switchOutlet } from "@/app/actions/orders";
@@ -33,6 +34,7 @@ const GROUPS = [
       { href: "/kasir", label: "Kasir", icon: ShoppingCart },
       { href: "/pesanan", label: "Open Bill", icon: ClipboardList },
       { href: "/transaksi", label: "Transaksi", icon: Receipt },
+      { href: "/tutup-kasir", label: "Tutup Kasir", icon: Wallet },
     ],
   },
   {
